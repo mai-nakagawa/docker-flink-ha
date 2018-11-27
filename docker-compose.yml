@@ -1,0 +1,57 @@
+version: '2'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+
+  jobmanager1:
+    image: flink
+    expose:
+      - "6123"
+    depends_on:
+      - zookeeper
+    ports:
+      - "18081:8081"
+    command: jobmanager
+    links:
+      - "zookeeper:zookeeper"
+    volumes:
+      - ./masters:/opt/flink/conf/masters
+      - ./flink-conf-jobmanager1.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./share:/share
+
+  jobmanager2:
+    image: flink
+    expose:
+      - "6123"
+    depends_on:
+      - zookeeper
+    ports:
+      - "28081:8081"
+    command: jobmanager
+    links:
+      - "zookeeper:zookeeper"
+    volumes:
+      - ./masters:/opt/flink/conf/masters
+      - ./flink-conf-jobmanager2.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./share:/share
+
+  taskmanager:
+    image: flink
+    expose:
+      - "6121"
+      - "6122"
+    depends_on:
+      - zookeeper
+      - jobmanager1
+      - jobmanager2
+    command: taskmanager
+    links:
+      - "zookeeper:zookeeper"
+      - "jobmanager1:jobmanager1"
+      - "jobmanager2:jobmanager2"
+    volumes:
+      - ./masters:/opt/flink/conf/masters
+      - ./flink-conf-taskmanager.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./share:/share
